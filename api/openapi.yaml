@@ -1,0 +1,531 @@
+openapi: 3.1.0
+info:
+  title: E-commerce Workshop API
+  version: "1.0.0"
+  description: |
+    Read-only dashboard API over the watsonx.data shared-cloud workshop dataset
+    (domain: ecommerce, attendee: user-08). Combines live operational data in
+    Cassandra (`ecommerce_user08`) with the shared historical baseline in
+    Iceberg (`ecommerce_reference`) via federated Presto queries.
+
+    This is a fixed data snapshot, not a live feed. "Today" (`as_of_date`) is
+    the most recent date present in the operational order data, and the
+    "30-day baseline" is the most recent 30 days present in the historical
+    daily-summary data — see `spec/design.md` for why these are
+    non-overlapping windows.
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /sales/today:
+    get:
+      operationId: getSalesToday
+      summary: Today's order volume and revenue vs. 30-day baseline
+      description: |
+        REQ-001. Federated query joining `orders_inflight` (Cassandra,
+        operational) with `daily_sales_summary` (Iceberg, historical
+        baseline) in a single Presto statement.
+      responses:
+        "200":
+          description: Today's totals, the 30-day baseline, and percent-change deltas.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesToday"
+              example:
+                as_of_date: "2026-04-23"
+                today:
+                  order_count: 15
+                  revenue: 100691.33
+                baseline_30d_avg:
+                  order_count: 18.87
+                  revenue: 58058.28
+                delta:
+                  order_count_pct: -20.5
+                  revenue_pct: 73.4
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /sales/today/by-category:
+    get:
+      operationId: getSalesTodayByCategory
+      summary: Today's orders broken down by product category, vs. baseline
+      description: |
+        REQ-002. Federated query joining `order_items_inflight` +
+        `orders_inflight` + `products` (Cassandra) with `daily_sales_summary`
+        (Iceberg), grouped by product category.
+      responses:
+        "200":
+          description: Per-category order count and revenue, today vs. 30-day baseline, sorted by revenue descending.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryBreakdown"
+              example:
+                - category: "Health"
+                  order_count: 5
+                  revenue: 21641.08
+                  baseline_order_count: 2.32
+                  baseline_revenue: 10736.83
+                - category: "Beauty"
+                  order_count: 4
+                  revenue: 16706.08
+                  baseline_order_count: 2.15
+                  baseline_revenue: 6973.12
+                - category: "Electronics"
+                  order_count: 3
+                  revenue: 9018.67
+                  baseline_order_count: 2.57
+                  baseline_revenue: 9906.70
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /sales/today/by-region:
+    get:
+      operationId: getSalesTodayByRegion
+      summary: Today's orders broken down by shipping region (state), vs. baseline
+      description: |
+        REQ-002. Federated query joining `orders_inflight` (Cassandra) with
+        `daily_sales_summary` (Iceberg), grouped by `shipping_state`.
+      responses:
+        "200":
+          description: Per-region order count and revenue, today vs. 30-day baseline, sorted by revenue descending.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegionBreakdown"
+              example:
+                - region: "CA"
+                  order_count: 5
+                  revenue: 31667.32
+                  baseline_order_count: 5.5
+                  baseline_revenue: 18908.48
+                - region: "TX"
+                  order_count: 3
+                  revenue: 20717.84
+                  baseline_order_count: 6.35
+                  baseline_revenue: 18990.74
+                - region: "IL"
+                  order_count: 3
+                  revenue: 19935.31
+                  baseline_order_count: 3.35
+                  baseline_revenue: 10654.15
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /inventory:
+    get:
+      operationId: getInventory
+      summary: Live inventory status for all products
+      description: |
+        REQ-003. Joins `products` with `inventory_ledger_recent` (both
+        Cassandra, via `cassandra_catalog`) to attach each product's most
+        recent stock-move timestamp.
+      parameters:
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [stock, urgency]
+            default: stock
+          description: |
+            `stock` sorts by `stock_quantity` ascending (lowest stock first).
+            `urgency` sorts by `stock_quantity - reorder_level` ascending
+            (most-overdrawn-relative-to-threshold first).
+      responses:
+        "200":
+          description: All products with current stock, reorder flag, and last stock-move timestamp.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+              example:
+                - product_id: "a5e139d5-b482-4cf7-844e-13f2d0de1dc7"
+                  sku: "TOY-61932"
+                  name: "HealthPlus Action Lite 279"
+                  category: "Toys"
+                  stock_quantity: 43
+                  reorder_level: 44
+                  below_reorder: true
+                  last_move_at: null
+                - product_id: "422b21bc-baa9-401e-a149-74537aae1343"
+                  sku: "CLO-35204"
+                  name: "SportElite Kids Pro 696"
+                  category: "Clothing"
+                  stock_quantity: 12
+                  reorder_level: 50
+                  below_reorder: true
+                  last_move_at: "2026-04-23T07:00:00Z"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /customers:
+    get:
+      operationId: getCustomer
+      summary: Look up a customer profile by ID or email
+      description: |
+        REQ-004. Direct Cassandra read against `customers` — by primary key
+        (`customer_id`) or via the `customers_email_idx` secondary index
+        (`email`). Exactly one of the two query parameters must be provided.
+      parameters:
+        - name: customer_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: email
+          in: query
+          required: false
+          schema:
+            type: string
+            format: email
+      responses:
+        "200":
+          description: The matching customer profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerProfile"
+              example:
+                customer_id: "1b175efd-b770-4b0b-a3d9-360912319a9b"
+                email: "sarah.davis291@example.com"
+                first_name: "Sarah"
+                last_name: "Davis"
+                phone: "+1-304-923-3290"
+                account_status: "active"
+                loyalty_tier: "silver"
+                current_ltv: 34012.27
+                total_orders: 6
+                shipping_city: "Los Angeles"
+                shipping_state: "CA"
+                shipping_country: "USA"
+        "400":
+          description: Neither or both of `customer_id`/`email` were provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                detail: "Provide exactly one of 'customer_id' or 'email'."
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /customers/{customer_id}/orders:
+    get:
+      operationId: getCustomerOrders
+      summary: A customer's in-flight orders, with line items
+      description: |
+        REQ-005. Direct Cassandra reads against `orders_inflight`
+        (partition key `customer_id`) and `order_items_inflight` (partition
+        key `order_id`, fetched per order returned).
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: |
+            The customer's in-flight orders (pending/processing/shipped),
+            most recent first. An empty array means the customer exists but
+            has no in-flight orders.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomerOrder"
+              example:
+                - order_id: "cec2912d-7587-43c7-9d0f-b910dc132f83"
+                  order_date: "2026-04-19"
+                  order_status: "processing"
+                  payment_status: "captured"
+                  total_amount: 13541.97
+                  currency: "USD"
+                  tracking_number: null
+                  estimated_delivery_date: "2026-04-29"
+                  items:
+                    - product_id: "6324f73b-e5eb-4652-ac02-7630513fa2b7"
+                      product_name: "SportElite Accessories Pro 156"
+                      product_sku: "CLO-39852"
+                      quantity: 8
+                      unit_price: 977.25
+                      line_total: 8443.44
+                    - product_id: "2f04666b-f162-4950-b8e8-cd79717657f4"
+                      product_name: "HealthPlus Fragrance Edge 926"
+                      product_sku: "BEA-94875"
+                      quantity: 3
+                      unit_price: 950.20
+                      line_total: 3078.65
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /customers/{customer_id}/reviews:
+    get:
+      operationId: getCustomerReviews
+      summary: A customer's recent (last 30 days) product reviews
+      description: |
+        REQ-006. `reviews_recent` has no index on `customer_id` (its key is
+        `(product_id, review_date), review_id`), so this is run as a Presto
+        scan over `cassandra_catalog`, joined with `products` for the
+        product name.
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: |
+            The customer's reviews from the last 30 days, most recent first.
+            An empty array means the customer exists but has submitted no
+            reviews in that window.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomerReview"
+              example:
+                - review_id: "f91f839b-4d8f-4b36-aecd-1b9bad9886a7"
+                  product_name: "ReadWell Fitness Classic 922"
+                  rating: 3
+                  title: "Great product"
+                  verified_purchase: true
+                  review_date: "2026-03-29"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+components:
+  schemas:
+    SalesToday:
+      type: object
+      required: [as_of_date, today, baseline_30d_avg, delta]
+      properties:
+        as_of_date:
+          type: string
+          format: date
+          description: Most recent date present in orders_inflight (the snapshot's "today").
+        today:
+          type: object
+          required: [order_count, revenue]
+          properties:
+            order_count:
+              type: integer
+            revenue:
+              type: number
+        baseline_30d_avg:
+          type: object
+          required: [order_count, revenue]
+          properties:
+            order_count:
+              type: number
+            revenue:
+              type: number
+        delta:
+          type: object
+          required: [order_count_pct, revenue_pct]
+          properties:
+            order_count_pct:
+              type: number
+              description: "(today - baseline) / baseline * 100"
+            revenue_pct:
+              type: number
+
+    CategoryBreakdown:
+      type: object
+      required: [category, order_count, revenue, baseline_order_count, baseline_revenue]
+      properties:
+        category:
+          type: string
+        order_count:
+          type: integer
+        revenue:
+          type: number
+        baseline_order_count:
+          type: number
+        baseline_revenue:
+          type: number
+
+    RegionBreakdown:
+      type: object
+      required: [region, order_count, revenue, baseline_order_count, baseline_revenue]
+      properties:
+        region:
+          type: string
+          description: Shipping state (e.g. "CA").
+        order_count:
+          type: integer
+        revenue:
+          type: number
+        baseline_order_count:
+          type: number
+        baseline_revenue:
+          type: number
+
+    InventoryItem:
+      type: object
+      required: [product_id, sku, name, category, stock_quantity, reorder_level, below_reorder, last_move_at]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        stock_quantity:
+          type: integer
+        reorder_level:
+          type: integer
+        below_reorder:
+          type: boolean
+        last_move_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Timestamp of the most recent inventory_ledger_recent entry, or null if none in the last 30 days.
+
+    CustomerProfile:
+      type: object
+      required: [customer_id, email, first_name, last_name, phone, account_status, loyalty_tier, current_ltv, total_orders, shipping_city, shipping_state, shipping_country]
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        account_status:
+          type: string
+          description: "Verbatim value from Cassandra (observed: active, suspended)."
+        loyalty_tier:
+          type: string
+          description: "Verbatim value from Cassandra (observed: bronze, silver, gold, platinum)."
+        current_ltv:
+          type: number
+        total_orders:
+          type: integer
+        shipping_city:
+          type: string
+        shipping_state:
+          type: string
+        shipping_country:
+          type: string
+
+    CustomerOrder:
+      type: object
+      required: [order_id, order_date, order_status, payment_status, total_amount, currency, tracking_number, estimated_delivery_date, items]
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        order_date:
+          type: string
+          format: date
+        order_status:
+          type: string
+          enum: [pending, processing, shipped]
+        payment_status:
+          type: string
+        total_amount:
+          type: number
+        currency:
+          type: string
+        tracking_number:
+          type: ["string", "null"]
+        estimated_delivery_date:
+          type: ["string", "null"]
+          format: date
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+
+    OrderItem:
+      type: object
+      required: [product_id, product_name, product_sku, quantity, unit_price, line_total]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        product_sku:
+          type: string
+        quantity:
+          type: integer
+        unit_price:
+          type: number
+        line_total:
+          type: number
+
+    CustomerReview:
+      type: object
+      required: [review_id, product_name, rating, title, verified_purchase, review_date]
+      properties:
+        review_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+        verified_purchase:
+          type: boolean
+        review_date:
+          type: string
+          format: date
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+  responses:
+    NotFound:
+      description: The given customer_id does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: "Customer not found."
+    UpstreamError:
+      description: The Presto query failed or returned an unexpected response.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: "Presto query failed: <upstream error message>"

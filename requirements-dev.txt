@@ -1,0 +1,7 @@
+# Everything needed to run the test suite (works offline in demo mode).
+-r requirements-live.txt
+pytest
+httpx
+pyyaml
+jsonschema
+openapi-spec-validator

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-commerce Workshop Dashboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="nav-brand">
+      <h1>E-commerce Dashboard</h1>
+    </div>
+
+    <nav class="nav-links">
+      <a href="#" class="nav-item active" data-target="view-overview">Overview</a>
+      <a href="#" class="nav-item" data-target="view-orders">Orders</a>
+      <a href="#" class="nav-item" data-target="view-inventory">Inventory</a>
+      <a href="#" class="nav-item" data-target="view-customers">Customers</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button id="theme-toggle" class="theme-btn">🌙 Dark Mode</button>
+      
+      <div class="profile-menu">
+        <div class="avatar">CB</div>
+        <div class="profile-info">
+          <span class="profile-name">Cristoffer B.</span>
+          <span class="profile-role">Account Manager</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="mode-banner" class="mode-banner hidden"></div>
+
+  <div class="main-container">
+    
+    <div id="view-overview" class="view-section active dashboard">
+      <section class="card card-sales">
+        <h2>Today's Sales <span id="as-of-date" class="muted"></span></h2>
+        <div id="sales-today-content" class="loading">Loading…</div>
+      </section>
+
+      <section class="card card-category">
+        <h2>Sales by Category</h2>
+        <div id="by-category-content" class="loading scroll-area">Loading…</div>
+      </section>
+
+      <section class="card card-region">
+        <h2>Sales by Region</h2>
+        <div id="by-region-content" class="loading scroll-area">Loading…</div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="card card-inventory">
+          <h2>Inventory</h2>
+          <div class="controls">
+            <label for="inventory-sort">Sort by:</label>
+            <select id="inventory-sort">
+              <option value="stock">Lowest stock first</option>
+              <option value="urgency">Most urgent</option>
+            </select>
+          </div>
+          <div id="inventory-content" class="loading scroll-area">Loading…</div>
+        </section>
+
+        <section class="card card-customer">
+          <h2>Customer Lookup</h2>
+          <form id="customer-form" class="controls">
+            <select id="customer-search-type">
+              <option value="customer_id">ID</option>
+              <option value="email">Email</option>
+              <option value="name">Name</option>
+            </select>
+            <input id="customer-search-value" type="text" placeholder="Customer ID, email, or name" required />
+            <button type="submit" class="primary-btn">Search</button>
+          </form>
+          <div id="customer-error" class="error-banner hidden"></div>
+          <h3 class="history-heading">Recent Lookups</h3>
+          <div id="history-content" class="scroll-area">
+            <p class="empty">No recent lookups.</p>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <div id="view-orders" class="view-section">
+      <section class="card full-page-card">
+        <h2>Recent Orders</h2>
+        <div id="demo-orders-content" class="scroll-area">Loading demo data...</div>
+      </section>
+    </div>
+
+    <div id="view-inventory" class="view-section">
+      <section class="card full-page-card">
+        <h2>Warehouse Inventory</h2>
+        <div id="demo-inventory-content" class="scroll-area">Loading demo data...</div>
+      </section>
+    </div>
+
+    <div id="view-customers" class="view-section">
+      <section class="card full-page-card">
+        <h2>Customer Directory</h2>
+        <div id="demo-customers-content" class="scroll-area">Loading demo data...</div>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- Customer Detail Modal -->
+  <div id="customer-modal" class="customer-modal hidden">
+    <div class="modal-overlay" onclick="closeCustomerModal()"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2>Customer Details</h2>
+        <button class="modal-close" onclick="closeCustomerModal()">✕</button>
+      </div>
+      <div class="modal-content scroll-area">
+        <div id="customer-detail-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

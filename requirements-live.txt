@@ -1,0 +1,3 @@
+# Runtime + live watsonx.data cluster access (Cassandra point lookups).
+-r requirements.txt
+cassandra-driver

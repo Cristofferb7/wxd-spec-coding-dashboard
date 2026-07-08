@@ -1,0 +1,6 @@
+# Runtime dependencies (demo mode / Vercel). For the live workshop cluster
+# install requirements-live.txt; for the test suite, requirements-dev.txt.
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
