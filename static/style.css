@@ -999,3 +999,31 @@ footer a:hover { color: var(--primary); }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Secondary / utility buttons (Export CSV, Refresh, and any bare button in controls) */
+.table-controls button:not(.primary-btn),
+button[data-action="export-csv"],
+button[data-action$="refresh"],
+button[data-action^="refresh"] {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.25s var(--ease-spring), box-shadow 0.2s ease;
+}
+.table-controls button:not(.primary-btn):hover,
+button[data-action="export-csv"]:hover,
+button[data-action$="refresh"]:hover,
+button[data-action^="refresh"]:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-tint);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-1);
+}
