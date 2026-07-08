@@ -202,28 +202,40 @@ function tierBadge(tier) {
 // ---------------------------------------------------------------------
 async function loadSalesToday() {
   const content = document.getElementById("sales-today-content");
-  content.innerHTML = skeleton(3);
+  content.innerHTML = `<div class="kpi">${skeleton(2)}</div><div class="kpi">${skeleton(2)}</div><div class="kpi">${skeleton(2)}</div>`;
   try {
     const data = await fetchJSON("/sales/today");
-    document.getElementById("as-of-date").textContent = `as of ${fmtDate(data.as_of_date)}`;
+    document.getElementById("as-of-date").textContent = `Today's sales, as of ${fmtDate(data.as_of_date)}`;
+
+    const aov = data.today.order_count > 0 ? data.today.revenue / data.today.order_count : 0;
+    const baselineAov = data.baseline_30d_avg.order_count > 0
+      ? data.baseline_30d_avg.revenue / data.baseline_30d_avg.order_count
+      : 0;
+    const aovDelta = baselineAov > 0 ? ((aov - baselineAov) / baselineAov) * 100 : 0;
 
     content.innerHTML = `
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="label">Orders today</div>
-          <div class="value">${esc(_number.format(data.today.order_count))}</div>
-          <div class="delta-line">
-            ${deltaBadge(data.delta.order_count_pct)}
-            <span class="muted vs">vs 30-day avg (${esc(data.baseline_30d_avg.order_count.toFixed(1))}/day)</span>
-          </div>
+      <div class="kpi">
+        <div class="label">Orders today</div>
+        <div class="value">${esc(_number.format(data.today.order_count))}</div>
+        <div class="delta-line">
+          ${deltaBadge(data.delta.order_count_pct)}
+          <span class="vs">vs 30-day avg (${esc(data.baseline_30d_avg.order_count.toFixed(1))}/day)</span>
         </div>
-        <div class="kpi">
-          <div class="label">Revenue today</div>
-          <div class="value">${esc(fmtMoney(data.today.revenue))}</div>
-          <div class="delta-line">
-            ${deltaBadge(data.delta.revenue_pct)}
-            <span class="muted vs">vs 30-day avg (${esc(fmtMoneyCompact(data.baseline_30d_avg.revenue))}/day)</span>
-          </div>
+      </div>
+      <div class="kpi">
+        <div class="label">Revenue today</div>
+        <div class="value">${esc(fmtMoney(data.today.revenue))}</div>
+        <div class="delta-line">
+          ${deltaBadge(data.delta.revenue_pct)}
+          <span class="vs">vs 30-day avg (${esc(fmtMoneyCompact(data.baseline_30d_avg.revenue))}/day)</span>
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="label">Avg order value</div>
+        <div class="value">${esc(fmtMoney(aov))}</div>
+        <div class="delta-line">
+          ${deltaBadge(aovDelta)}
+          <span class="vs">vs 30-day avg (${esc(fmtMoney(baselineAov))})</span>
         </div>
       </div>
     `;
@@ -719,6 +731,7 @@ function renderHistory() {
 // Demo-mode banner
 // ---------------------------------------------------------------------
 async function loadModeBanner() {
+  if (sessionStorage.getItem("demo-banner-dismissed")) return;
   try {
     const health = await fetchJSON("/api/health");
     if (health.mode !== "demo") return;
@@ -726,10 +739,11 @@ async function loadModeBanner() {
     const banner = document.getElementById("mode-banner");
     banner.classList.remove("hidden");
     banner.innerHTML = `
-      <strong>Demo mode</strong> — serving a generated sample dataset (no live
+      <span><strong>Demo mode</strong> — serving a generated sample dataset (no live
       watsonx.data cluster connected). Try the customer lookup with
       <button type="button" class="banner-link" data-action="re-search"
-              data-search-type="email" data-search-value="${esc(health.sample_customer_email)}">${esc(health.sample_customer_email)}</button>
+              data-search-type="email" data-search-value="${esc(health.sample_customer_email)}">${esc(health.sample_customer_email)}</button></span>
+      <button type="button" class="banner-close" data-action="dismiss-banner" aria-label="Dismiss demo notice">✕</button>
     `;
   } catch {
     // Health endpoint unavailable — leave the banner hidden.
@@ -803,6 +817,10 @@ function initDelegation() {
         break;
       case "close-modal":
         closeCustomerModal();
+        break;
+      case "dismiss-banner":
+        document.getElementById("mode-banner").classList.add("hidden");
+        sessionStorage.setItem("demo-banner-dismissed", "1");
         break;
       case "export-csv":
         exportTableToCSV(el.getAttribute("data-table"), el.getAttribute("data-filename"));

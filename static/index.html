@@ -54,78 +54,92 @@
 
   <div id="mode-banner" class="mode-banner hidden" role="status"></div>
 
-  <main class="main-container">
+  <main>
 
-    <div id="view-overview" class="view-section active dashboard">
-      <section class="card card-sales" aria-labelledby="sales-heading">
-        <h2 id="sales-heading">Today's sales <span id="as-of-date" class="muted"></span></h2>
-        <div id="sales-today-content" aria-live="polite"></div>
-      </section>
+    <div id="view-overview" class="view-section active">
+      <div class="page">
+        <div class="page-head">
+          <h2>Overview</h2>
+          <span id="as-of-date" class="muted"></span>
+        </div>
 
-      <section class="card card-category" aria-labelledby="category-heading">
-        <h2 id="category-heading">Revenue by category</h2>
-        <div id="by-category-content" class="scroll-area" aria-live="polite"></div>
-      </section>
+        <section id="sales-today-content" class="kpi-strip" aria-label="Today's sales" aria-live="polite"></section>
 
-      <section class="card card-region" aria-labelledby="region-heading">
-        <h2 id="region-heading">Revenue by region</h2>
-        <div id="by-region-content" class="scroll-area" aria-live="polite"></div>
-      </section>
+        <div class="grid grid-charts">
+          <section class="card" aria-labelledby="category-heading">
+            <h2 id="category-heading">Revenue by category</h2>
+            <div id="by-category-content" aria-live="polite"></div>
+          </section>
 
-      <aside class="sidebar">
-        <section class="card card-inventory" aria-labelledby="inventory-heading">
-          <h2 id="inventory-heading">Inventory</h2>
-          <div class="controls">
-            <label for="inventory-sort">Sort by</label>
-            <select id="inventory-sort">
-              <option value="stock">Lowest stock first</option>
-              <option value="urgency">Most urgent</option>
-            </select>
-          </div>
-          <div id="inventory-content" class="scroll-area" aria-live="polite"></div>
-        </section>
+          <section class="card" aria-labelledby="region-heading">
+            <h2 id="region-heading">Revenue by region</h2>
+            <div id="by-region-content" aria-live="polite"></div>
+          </section>
+        </div>
 
-        <section class="card card-customer" aria-labelledby="customer-heading">
-          <h2 id="customer-heading">Customer lookup</h2>
-          <form id="customer-form" class="controls">
-            <label for="customer-search-type" class="visually-hidden">Search by</label>
-            <select id="customer-search-type">
-              <option value="customer_id">ID</option>
-              <option value="email">Email</option>
-              <option value="name">Name</option>
-            </select>
-            <label for="customer-search-value" class="visually-hidden">Search value</label>
-            <input id="customer-search-value" type="text" placeholder="Customer ID, email, or name" required />
-            <button type="submit" class="primary-btn">Search</button>
-          </form>
-          <div id="customer-error" class="error-banner hidden" role="alert"></div>
-          <h3 class="history-heading">Recent lookups</h3>
-          <div id="history-content" class="scroll-area">
-            <p class="empty">No recent lookups.</p>
-          </div>
-        </section>
-      </aside>
+        <div class="grid grid-bottom">
+          <section class="card" aria-labelledby="inventory-heading">
+            <div class="card-head">
+              <h2 id="inventory-heading">Inventory</h2>
+              <div class="controls">
+                <label for="inventory-sort">Sort by</label>
+                <select id="inventory-sort">
+                  <option value="stock">Lowest stock first</option>
+                  <option value="urgency">Most urgent</option>
+                </select>
+              </div>
+            </div>
+            <div id="inventory-content" class="scroll-cap" aria-live="polite"></div>
+          </section>
+
+          <section class="card" aria-labelledby="customer-heading">
+            <h2 id="customer-heading">Customer lookup</h2>
+            <form id="customer-form" class="controls">
+              <label for="customer-search-type" class="visually-hidden">Search by</label>
+              <select id="customer-search-type">
+                <option value="customer_id">ID</option>
+                <option value="email">Email</option>
+                <option value="name">Name</option>
+              </select>
+              <label for="customer-search-value" class="visually-hidden">Search value</label>
+              <input id="customer-search-value" type="text" placeholder="Customer ID, email, or name" required />
+              <button type="submit" class="primary-btn">Search</button>
+            </form>
+            <div id="customer-error" class="error-banner hidden" role="alert"></div>
+            <h3 class="history-heading">Recent lookups</h3>
+            <div id="history-content" class="scroll-cap scroll-cap-short">
+              <p class="empty">No recent lookups.</p>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
 
     <div id="view-orders" class="view-section">
-      <section class="card full-page-card" aria-labelledby="orders-page-heading">
-        <h2 id="orders-page-heading">Recent orders</h2>
-        <div id="demo-orders-content" class="scroll-area"></div>
-      </section>
+      <div class="page">
+        <section class="card" aria-labelledby="orders-page-heading">
+          <h2 id="orders-page-heading">Recent orders</h2>
+          <div id="demo-orders-content" class="table-wrap"></div>
+        </section>
+      </div>
     </div>
 
     <div id="view-inventory" class="view-section">
-      <section class="card full-page-card" aria-labelledby="warehouse-page-heading">
-        <h2 id="warehouse-page-heading">Warehouse inventory</h2>
-        <div id="demo-inventory-content" class="scroll-area"></div>
-      </section>
+      <div class="page">
+        <section class="card" aria-labelledby="warehouse-page-heading">
+          <h2 id="warehouse-page-heading">Warehouse inventory</h2>
+          <div id="demo-inventory-content" class="table-wrap"></div>
+        </section>
+      </div>
     </div>
 
     <div id="view-customers" class="view-section">
-      <section class="card full-page-card" aria-labelledby="customers-page-heading">
-        <h2 id="customers-page-heading">Customer directory</h2>
-        <div id="demo-customers-content" class="scroll-area"></div>
-      </section>
+      <div class="page">
+        <section class="card" aria-labelledby="customers-page-heading">
+          <h2 id="customers-page-heading">Customer directory</h2>
+          <div id="demo-customers-content" class="table-wrap"></div>
+        </section>
+      </div>
     </div>
 
   </main>
@@ -147,7 +161,7 @@
         <h2 id="modal-title">Customer details</h2>
         <button class="modal-close" type="button" data-action="close-modal" aria-label="Close dialog">✕</button>
       </div>
-      <div class="modal-content scroll-area">
+      <div class="modal-content">
         <div id="customer-detail-content"></div>
       </div>
     </div>
