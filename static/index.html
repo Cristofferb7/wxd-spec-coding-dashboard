@@ -3,16 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>E-commerce Workshop Dashboard</title>
+  <title>E-commerce Dashboard · watsonx.data Spec-Coding Workshop</title>
+  <meta name="description" content="Read-only e-commerce operations dashboard built spec-first at IBM's watsonx.data workshop — federated Presto queries over Cassandra and Iceberg, with an offline demo mode." />
+  <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)" />
+  <meta property="og:title" content="E-commerce Dashboard · watsonx.data Spec-Coding Workshop" />
+  <meta property="og:description" content="Sales, inventory, and customer 360 over federated Cassandra + Iceberg data — spec-coded with FastAPI." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='16' width='6' height='12' rx='2' fill='%232a78d6'/%3E%3Crect x='13' y='9' width='6' height='19' rx='2' fill='%232a78d6'/%3E%3Crect x='22' y='4' width='6' height='24' rx='2' fill='%232a78d6'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/style.css" />
+  <script>
+    // Apply the saved (or system) theme before first paint to avoid a flash.
+    (function () {
+      var saved = localStorage.getItem("theme");
+      var theme = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 </head>
 <body>
   <header>
     <div class="nav-brand">
+      <svg class="logo" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="4" y="16" width="6" height="12" rx="2" fill="#2a78d6"/>
+        <rect x="13" y="9" width="6" height="19" rx="2" fill="#2a78d6"/>
+        <rect x="22" y="4" width="6" height="24" rx="2" fill="#2a78d6"/>
+      </svg>
       <h1>E-commerce Dashboard</h1>
     </div>
 
-    <nav class="nav-links">
+    <nav class="nav-links" aria-label="Main navigation">
       <a href="#" class="nav-item active" data-target="view-overview">Overview</a>
       <a href="#" class="nav-item" data-target="view-orders">Orders</a>
       <a href="#" class="nav-item" data-target="view-inventory">Inventory</a>
@@ -20,10 +40,10 @@
     </nav>
 
     <div class="nav-actions">
-      <button id="theme-toggle" class="theme-btn">🌙 Dark Mode</button>
-      
+      <button id="theme-toggle" class="theme-btn" type="button" aria-label="Switch to dark mode">🌙</button>
+
       <div class="profile-menu">
-        <div class="avatar">CB</div>
+        <div class="avatar" aria-hidden="true">CB</div>
         <div class="profile-info">
           <span class="profile-name">Cristoffer B.</span>
           <span class="profile-role">Account Manager</span>
@@ -32,52 +52,54 @@
     </div>
   </header>
 
-  <div id="mode-banner" class="mode-banner hidden"></div>
+  <div id="mode-banner" class="mode-banner hidden" role="status"></div>
 
-  <div class="main-container">
-    
+  <main class="main-container">
+
     <div id="view-overview" class="view-section active dashboard">
-      <section class="card card-sales">
-        <h2>Today's Sales <span id="as-of-date" class="muted"></span></h2>
-        <div id="sales-today-content" class="loading">Loading…</div>
+      <section class="card card-sales" aria-labelledby="sales-heading">
+        <h2 id="sales-heading">Today's sales <span id="as-of-date" class="muted"></span></h2>
+        <div id="sales-today-content" aria-live="polite"></div>
       </section>
 
-      <section class="card card-category">
-        <h2>Sales by Category</h2>
-        <div id="by-category-content" class="loading scroll-area">Loading…</div>
+      <section class="card card-category" aria-labelledby="category-heading">
+        <h2 id="category-heading">Revenue by category</h2>
+        <div id="by-category-content" class="scroll-area" aria-live="polite"></div>
       </section>
 
-      <section class="card card-region">
-        <h2>Sales by Region</h2>
-        <div id="by-region-content" class="loading scroll-area">Loading…</div>
+      <section class="card card-region" aria-labelledby="region-heading">
+        <h2 id="region-heading">Revenue by region</h2>
+        <div id="by-region-content" class="scroll-area" aria-live="polite"></div>
       </section>
 
       <aside class="sidebar">
-        <section class="card card-inventory">
-          <h2>Inventory</h2>
+        <section class="card card-inventory" aria-labelledby="inventory-heading">
+          <h2 id="inventory-heading">Inventory</h2>
           <div class="controls">
-            <label for="inventory-sort">Sort by:</label>
+            <label for="inventory-sort">Sort by</label>
             <select id="inventory-sort">
               <option value="stock">Lowest stock first</option>
               <option value="urgency">Most urgent</option>
             </select>
           </div>
-          <div id="inventory-content" class="loading scroll-area">Loading…</div>
+          <div id="inventory-content" class="scroll-area" aria-live="polite"></div>
         </section>
 
-        <section class="card card-customer">
-          <h2>Customer Lookup</h2>
+        <section class="card card-customer" aria-labelledby="customer-heading">
+          <h2 id="customer-heading">Customer lookup</h2>
           <form id="customer-form" class="controls">
+            <label for="customer-search-type" class="visually-hidden">Search by</label>
             <select id="customer-search-type">
               <option value="customer_id">ID</option>
               <option value="email">Email</option>
               <option value="name">Name</option>
             </select>
+            <label for="customer-search-value" class="visually-hidden">Search value</label>
             <input id="customer-search-value" type="text" placeholder="Customer ID, email, or name" required />
             <button type="submit" class="primary-btn">Search</button>
           </form>
-          <div id="customer-error" class="error-banner hidden"></div>
-          <h3 class="history-heading">Recent Lookups</h3>
+          <div id="customer-error" class="error-banner hidden" role="alert"></div>
+          <h3 class="history-heading">Recent lookups</h3>
           <div id="history-content" class="scroll-area">
             <p class="empty">No recent lookups.</p>
           </div>
@@ -86,35 +108,44 @@
     </div>
 
     <div id="view-orders" class="view-section">
-      <section class="card full-page-card">
-        <h2>Recent Orders</h2>
-        <div id="demo-orders-content" class="scroll-area">Loading demo data...</div>
+      <section class="card full-page-card" aria-labelledby="orders-page-heading">
+        <h2 id="orders-page-heading">Recent orders</h2>
+        <div id="demo-orders-content" class="scroll-area"></div>
       </section>
     </div>
 
     <div id="view-inventory" class="view-section">
-      <section class="card full-page-card">
-        <h2>Warehouse Inventory</h2>
-        <div id="demo-inventory-content" class="scroll-area">Loading demo data...</div>
+      <section class="card full-page-card" aria-labelledby="warehouse-page-heading">
+        <h2 id="warehouse-page-heading">Warehouse inventory</h2>
+        <div id="demo-inventory-content" class="scroll-area"></div>
       </section>
     </div>
 
     <div id="view-customers" class="view-section">
-      <section class="card full-page-card">
-        <h2>Customer Directory</h2>
-        <div id="demo-customers-content" class="scroll-area">Loading demo data...</div>
+      <section class="card full-page-card" aria-labelledby="customers-page-heading">
+        <h2 id="customers-page-heading">Customer directory</h2>
+        <div id="demo-customers-content" class="scroll-area"></div>
       </section>
     </div>
 
-  </div>
+  </main>
 
-  <!-- Customer Detail Modal -->
-  <div id="customer-modal" class="customer-modal hidden">
-    <div class="modal-overlay" onclick="closeCustomerModal()"></div>
+  <footer>
+    <span>Built spec-first at IBM's watsonx.data workshop — FastAPI · Presto · Cassandra · Iceberg</span>
+    <span>
+      <a href="https://github.com/Cristofferb7/wxd-spec-coding-dashboard" rel="noopener" target="_blank">Source on GitHub</a>
+      &nbsp;·&nbsp;
+      <a href="/docs" target="_blank" rel="noopener">API docs</a>
+    </span>
+  </footer>
+
+  <!-- Customer detail modal -->
+  <div id="customer-modal" class="customer-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-overlay" data-action="close-modal"></div>
     <div class="modal-panel">
       <div class="modal-header">
-        <h2>Customer Details</h2>
-        <button class="modal-close" onclick="closeCustomerModal()">✕</button>
+        <h2 id="modal-title">Customer details</h2>
+        <button class="modal-close" type="button" data-action="close-modal" aria-label="Close dialog">✕</button>
       </div>
       <div class="modal-content scroll-area">
         <div id="customer-detail-content"></div>
