@@ -1,181 +1,200 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<!doctype html>
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>E-commerce Dashboard · watsonx.data Spec-Coding Workshop</title>
-  <meta name="description" content="Read-only e-commerce operations dashboard built spec-first at IBM's watsonx.data workshop — federated Presto queries over Cassandra and Iceberg, with an offline demo mode." />
-  <meta name="theme-color" content="#f6f6f8" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#0a0a0d" media="(prefers-color-scheme: dark)" />
-  <meta property="og:title" content="E-commerce Dashboard · watsonx.data Spec-Coding Workshop" />
-  <meta property="og:description" content="Sales, inventory, and customer 360 over federated Cassandra + Iceberg data — spec-coded with FastAPI." />
-  <meta property="og:type" content="website" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%233d63f0'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='16' width='6' height='12' rx='3' fill='url(%23g)'/%3E%3Crect x='13' y='9' width='6' height='19' rx='3' fill='url(%23g)'/%3E%3Crect x='22' y='4' width='6' height='24' rx='3' fill='url(%23g)'/%3E%3C/svg%3E" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pulse · Commerce Intelligence</title>
+  <meta name="description" content="Pulse — a real-time e-commerce intelligence console. Sales, inventory and customer analytics federated across Cassandra and Iceberg via watsonx.data." />
+  <meta name="theme-color" content="#08080d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b8cff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12h-4l-3 9L9 3l-3 9H2'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="/style.css" />
-  <script>
-    // Apply the saved (or system) theme before first paint to avoid a flash.
-    (function () {
-      var saved = localStorage.getItem("theme");
-      var theme = saved || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      document.documentElement.setAttribute("data-theme", theme);
-    })();
-  </script>
 </head>
 <body>
-  <header>
-    <div class="nav-brand">
-      <svg class="logo" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <defs>
-          <linearGradient id="logo-g" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stop-color="#3d63f0"/>
-            <stop offset="1" stop-color="#8b5cf6"/>
-          </linearGradient>
-        </defs>
-        <rect x="4" y="16" width="6" height="12" rx="3" fill="url(#logo-g)"/>
-        <rect x="13" y="9" width="6" height="19" rx="3" fill="url(#logo-g)"/>
-        <rect x="22" y="4" width="6" height="24" rx="3" fill="url(#logo-g)"/>
-      </svg>
-      <h1>E-commerce Dashboard</h1>
-    </div>
 
-    <nav class="nav-links" aria-label="Main navigation">
-      <a href="#" class="nav-item active" data-target="view-overview">Overview</a>
-      <a href="#" class="nav-item" data-target="view-orders">Orders</a>
-      <a href="#" class="nav-item" data-target="view-inventory">Inventory</a>
-      <a href="#" class="nav-item" data-target="view-customers">Customers</a>
-    </nav>
+  <a class="skip-link" href="#overview">Skip to content</a>
 
-    <div class="nav-actions">
-      <button id="theme-toggle" class="theme-btn" type="button" aria-label="Switch to dark mode">🌙</button>
-
-      <div class="profile-menu">
-        <div class="avatar" aria-hidden="true">CB</div>
-        <div class="profile-info">
-          <span class="profile-name">Cristoffer B.</span>
-          <span class="profile-role">Account Manager</span>
-        </div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#overview" aria-label="Pulse home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </span>
+        <span class="brand-name">Pulse</span>
+        <span class="brand-sub">Commerce&nbsp;Intelligence</span>
+      </a>
+      <nav class="topnav" aria-label="Sections">
+        <a href="#overview">Overview</a>
+        <a href="#orders">Orders</a>
+        <a href="#inventory">Inventory</a>
+        <a href="#customers">Customers</a>
+      </nav>
+      <div class="topbar-actions">
+        <span id="health-pill" class="pill pill-neutral" title="Data backend">
+          <span class="pill-dot" aria-hidden="true"></span>connecting…
+        </span>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
       </div>
     </div>
   </header>
 
-  <div id="mode-banner" class="mode-banner hidden" role="status"></div>
-
-  <main>
-
-    <div id="view-overview" class="view-section active">
-      <div class="page">
-        <div class="page-head">
-          <h2>Overview</h2>
-          <span id="as-of-date" class="muted"></span>
-        </div>
-
-        <section id="sales-today-content" class="kpi-strip" aria-label="Today's sales" aria-live="polite"></section>
-
-        <div class="grid grid-charts">
-          <section class="card" aria-labelledby="category-heading">
-            <h2 id="category-heading">Revenue by category</h2>
-            <div id="by-category-content" aria-live="polite"></div>
-          </section>
-
-          <section class="card" aria-labelledby="region-heading">
-            <h2 id="region-heading">Revenue by region</h2>
-            <div id="by-region-content" aria-live="polite"></div>
-          </section>
-        </div>
-
-        <div class="grid grid-bottom">
-          <section class="card" aria-labelledby="inventory-heading">
-            <div class="card-head">
-              <h2 id="inventory-heading">Inventory</h2>
-              <div class="controls">
-                <label for="inventory-sort">Sort by</label>
-                <select id="inventory-sort">
-                  <option value="stock">Lowest stock first</option>
-                  <option value="urgency">Most urgent</option>
-                </select>
-              </div>
-            </div>
-            <div id="inventory-content" class="scroll-cap" aria-live="polite"></div>
-          </section>
-
-          <section class="card" aria-labelledby="customer-heading">
-            <h2 id="customer-heading">Customer lookup</h2>
-            <form id="customer-form" class="controls">
-              <label for="customer-search-type" class="visually-hidden">Search by</label>
-              <select id="customer-search-type">
-                <option value="customer_id">ID</option>
-                <option value="email">Email</option>
-                <option value="name">Name</option>
-              </select>
-              <label for="customer-search-value" class="visually-hidden">Search value</label>
-              <input id="customer-search-value" type="text" placeholder="Customer ID, email, or name" required />
-              <button type="submit" class="primary-btn">Search</button>
-            </form>
-            <div id="customer-error" class="error-banner hidden" role="alert"></div>
-            <h3 class="history-heading">Recent lookups</h3>
-            <div id="history-content" class="scroll-cap scroll-cap-short">
-              <p class="empty">No recent lookups.</p>
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
-
-    <div id="view-orders" class="view-section">
-      <div class="page">
-        <section class="card" aria-labelledby="orders-page-heading">
-          <h2 id="orders-page-heading">Recent orders</h2>
-          <div id="demo-orders-content" class="table-wrap"></div>
-        </section>
-      </div>
-    </div>
-
-    <div id="view-inventory" class="view-section">
-      <div class="page">
-        <section class="card" aria-labelledby="warehouse-page-heading">
-          <h2 id="warehouse-page-heading">Warehouse inventory</h2>
-          <div id="demo-inventory-content" class="table-wrap"></div>
-        </section>
-      </div>
-    </div>
-
-    <div id="view-customers" class="view-section">
-      <div class="page">
-        <section class="card" aria-labelledby="customers-page-heading">
-          <h2 id="customers-page-heading">Customer directory</h2>
-          <div id="demo-customers-content" class="table-wrap"></div>
-        </section>
-      </div>
-    </div>
-
-  </main>
-
-  <footer>
-    <span>Built spec-first at IBM's watsonx.data workshop — FastAPI · Presto · Cassandra · Iceberg</span>
-    <span>
-      <a href="https://github.com/Cristofferb7/wxd-spec-coding-dashboard" rel="noopener" target="_blank">Source on GitHub</a>
-      &nbsp;·&nbsp;
-      <a href="/docs" target="_blank" rel="noopener">API docs</a>
-    </span>
-  </footer>
-
-  <!-- Customer detail modal -->
-  <div id="customer-modal" class="customer-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-overlay" data-action="close-modal"></div>
-    <div class="modal-panel">
-      <div class="modal-header">
-        <h2 id="modal-title">Customer details</h2>
-        <button class="modal-close" type="button" data-action="close-modal" aria-label="Close dialog">✕</button>
-      </div>
-      <div class="modal-content">
-        <div id="customer-detail-content"></div>
-      </div>
+  <div id="demo-banner" class="demo-banner" hidden>
+    <div class="wrap demo-banner-inner">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+      <p>Running on the deterministic <strong>demo dataset</strong> — no live cluster attached.</p>
+      <button id="demo-lookup" class="btn btn-ghost btn-sm" type="button">Try a sample customer →</button>
     </div>
   </div>
 
-  <script src="/app.js"></script>
+  <main class="wrap">
+
+    <!-- ============ OVERVIEW ============ -->
+    <section id="overview" class="section">
+      <div class="section-head">
+        <div>
+          <h1 class="display">Today at a glance<span class="accent-dot">.</span></h1>
+          <p id="as-of" class="section-sub">Loading date…</p>
+        </div>
+        <button id="refresh" class="btn btn-ghost" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+          Refresh
+        </button>
+      </div>
+
+      <div id="kpi-grid" class="kpi-grid" aria-live="polite">
+        <!-- kpi cards injected -->
+      </div>
+
+      <div class="grid-2">
+        <article class="card reveal" id="category-card">
+          <header class="card-head">
+            <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Revenue by category</h2>
+            <span class="card-note">vs 30-day baseline</span>
+          </header>
+          <div class="cat-layout">
+            <div id="cat-donut" class="donut-wrap" role="img" aria-label="Category revenue share"></div>
+            <div id="cat-bars" class="bars"></div>
+          </div>
+        </article>
+
+        <article class="card reveal" id="region-card">
+          <header class="card-head">
+            <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Revenue by region</h2>
+            <span class="card-note">top U.S. states</span>
+          </header>
+          <div id="region-bars" class="bars bars-tall"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ ORDERS ============ -->
+    <section id="orders" class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="title">Recent orders</h2>
+          <p class="section-sub">Live order stream — click a row to open the customer.</p>
+        </div>
+        <span id="orders-count" class="chip"></span>
+      </div>
+      <article class="card reveal">
+        <div class="table-scroll">
+          <table class="table" id="orders-table">
+            <thead>
+              <tr><th>Order</th><th>Customer</th><th>Date</th><th>Status</th><th class="num">Total</th></tr>
+            </thead>
+            <tbody id="orders-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============ INVENTORY ============ -->
+    <section id="inventory" class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="title">Inventory health</h2>
+          <p class="section-sub">Stock levels against reorder points.</p>
+        </div>
+        <div class="seg" role="tablist" aria-label="Sort inventory">
+          <button class="seg-btn is-active" data-sort="urgency" type="button">Urgency</button>
+          <button class="seg-btn" data-sort="stock" type="button">Stock</button>
+        </div>
+      </div>
+      <div id="inv-summary" class="chip-row"></div>
+      <article class="card reveal">
+        <div class="table-scroll">
+          <table class="table" id="inv-table">
+            <thead>
+              <tr><th>Product</th><th>Category</th><th class="stock-col">Stock vs reorder</th><th>Last movement</th><th>Status</th></tr>
+            </thead>
+            <tbody id="inv-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============ CUSTOMERS ============ -->
+    <section id="customers" class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="title">Customer explorer</h2>
+          <p class="section-sub">Look up any customer by ID, email or full name.</p>
+        </div>
+      </div>
+
+      <div class="grid-2 grid-2-uneven">
+        <div class="cust-left">
+          <article class="card reveal">
+            <form id="cust-form" class="cust-form" autocomplete="off">
+              <div class="seg seg-full" role="tablist" aria-label="Search type">
+                <button class="seg-btn" data-type="customer_id" type="button">ID</button>
+                <button class="seg-btn is-active" data-type="email" type="button">Email</button>
+                <button class="seg-btn" data-type="name" type="button">Name</button>
+              </div>
+              <div class="search-row">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input id="cust-input" type="text" placeholder="sarah.davis291@example.com" aria-label="Search value" required />
+                <button class="btn btn-primary" type="submit">Search</button>
+              </div>
+            </form>
+            <div id="cust-result" class="cust-result">
+              <p class="empty-note">Search for a customer to see their profile, orders and reviews.</p>
+            </div>
+          </article>
+        </div>
+        <aside class="cust-right">
+          <article class="card reveal">
+            <header class="card-head">
+              <h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Top customers</h2>
+              <span class="card-note">by lifetime value</span>
+            </header>
+            <ol id="top-customers" class="top-list"></ol>
+          </article>
+        </aside>
+      </div>
+
+      <div id="cust-detail" class="cust-detail"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p><strong>Pulse</strong> — federated commerce analytics over Cassandra + Iceberg via watsonx.data.</p>
+      <p class="footer-links">
+        <a href="/docs" target="_blank" rel="noopener">API docs</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/Cristofferb7/wxd-spec-coding-dashboard" target="_blank" rel="noopener">GitHub</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://portfolio-three-red-18.vercel.app" target="_blank" rel="noopener">Cristoffer Bohorquez</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="/app.js" defer></script>
 </body>
 </html>
